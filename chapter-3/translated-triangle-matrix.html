@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>使用矩阵进行三角形旋转</title>
+    <title>使用矩阵进行三角形平移</title>
     <script src="../lib/webgl-utils.js"></script>
     <script src="../lib/webgl-debug.js"></script>
     <script src="../lib/cuon-utils.js"></script>
@@ -34,7 +34,10 @@
         }
     `;
 
-    const ANGLE = 90.0;
+    // const ANGLE = 90.0;
+    const Tx = 0.5;
+    const Ty = 0.5;
+    const Tz = 0.0;
 
     function main() {
         const canvas = document.getElementById('webgl');
@@ -55,15 +58,15 @@
             console.log('Failed to set the positions of the vertices');
             return;
         }
-        const radian = Math.PI * ANGLE / 180.0;
-        const cosB = Math.cos(radian);
-        const sinB = Math.sin(radian);
+        // const radian = Math.PI * ANGLE / 180.0;
+        // const cosB = Math.cos(radian);
+        // const sinB = Math.sin(radian);
         //webgl中矩阵是列主序的
         const xformMatrix = new Float32Array([
-            cosB, sinB, 0.0, 0.0,
-            -sinB, cosB, 0.0, 0.0,
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
             0.0, 0.0, 1.0, 0.0,
-            0.0, 0.0, 0.0, 1.0,
+            Tx, Ty, Tz, 1.0
         ]);
         const u_xformMatrix = gl.getUniformLocation(gl.program, 'u_xformMatrix');
         if (u_xformMatrix < 0) {

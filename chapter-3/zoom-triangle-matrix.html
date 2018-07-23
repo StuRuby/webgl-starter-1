@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>使用矩阵进行三角形缩放</title>
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/webgl-debug.js"></script>
+    <script src="../lib/cuon-utils.js"></script>
+</head>
+
+<body>
+    <canvas id="webgl" width="400" height="400"></canvas>
+</body>
+
+</html>
+<script>
+    const VSHADER_SOURCE = `
+        attribute vec4 a_Position;
+        uniform mat4 u_xformMatrix;
+        void main(){
+            gl_Position = a_Position * u_xformMatrix;
+        }
+    `;
+    const FSHADER_SOURCE = `
+        precision mediump float;
+        uniform vec4 u_FragColor;
+        void main(){
+            gl_FragColor = u_FragColor;
+        }
+    `;
+
+    const Sx = 1.0;
+    const Sy = 1.5;
+    const Sz = 1.0;
+
+    function main() {
+        const canvas = document.getElementById('webgl');
+        const gl = getWebGLContext(canvas);
+        if (!gl) {
+            console.log('Failed to initial webgl');
+            return;
+        }
+        if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) {
+            console.log('Failed to init shaders');
+            return;
+        }
+
+        let n = initVectexBuffers(gl);
+        if (n < 0) {
+            console.log('Failed to set the positions of the vectices');
+            return;
+        }
+
+        const xformMatrix = new Float32Array([
+            Sx, 0.0, 0.0, 0.0,
+            0.0, Sy, 0.0, 0.0,
+            0.0, 0.0, Sz, 0.0,
+            0.0, 0.0, 0.0, 1.0,
+        ]);
+        const u_xformMatrix = gl.getUniformLocation(gl.program, 'u_xformMatrix');
+        if (u_xformMatrix < 0) {
+            console.log('Failed to get the storage of uniforms');
+            return;
+        }
+        gl.uniformMatrix4fv(u_xformMatrix, false, xformMatrix);
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLES, 0, n);
+    }
+
+    function initVectexBuffers(gl) {
+        let vertices = new Float32Array([
+            0.0, 0.5, -0.5, -0.5, 0.5, -0.5
+        ]);
+
+        let n=3;
+        let vertexBuffer =gl.createBuffer();
+        if(!vertexBuffer){
+            console.log('Failed to create the buffer object');
+            return -1;
+        }
+        gl.bindBuffer(gl.ARRAY_BUFFER,vertexBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER,vertices,gl.STATIC_DRAW);
+
+        const a_Position =gl.getAttribLocation(gl.program,'a_Position');
+        if(a_Position<0){
+            console.log('Failed to get the storage location of a_Position');
+        }
+
+        gl.vertexAttribPointer(a_Position,2,gl.FLOAT,false,0,0);
+        gl.enableVertexAttribArray(a_Position);
+        return n;
+    }
+
+    main();
+</script>
