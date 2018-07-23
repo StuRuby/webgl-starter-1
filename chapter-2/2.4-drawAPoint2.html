@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>draw a point 2</title>
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/webgl-debug.js"></script>
+    <script src="../lib/cuon-utils.js"></script>
+</head>
+
+<body>
+    <canvas id="webgl" width="400" height="400">
+        please use the browser supporting 'canvas'
+    </canvas>
+</body>
+
+</html>
+<script>
+    //attribute 存储限定符，表明接下来的变量是一个`attribute`变量。
+    const VSHADER_SOURCE = `
+        attribute vec4 a_Position;
+        attribute float a_PointSize;
+        void main(){
+            gl_Position=a_Position;
+            gl_PointSize=a_PointSize;
+        }
+    `;
+    const FSHADER_SOURCE = `
+        void main(){
+            gl_FragColor =vec4(1.0,0.0,0.0,1.0);
+        }
+    `;
+
+    function main() {
+        const canvas = document.getElementById('webgl');
+        const gl = getWebGLContext(canvas);
+        if (!gl) {
+            console.log(`failed to get the rendering context for webgl`);
+            return;
+        }
+        //初始化着色器，成功返回true,失败返回false。
+        if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) {
+            console.log(`failed to initialize shaders.`);
+            return;
+        }
+        //想向顶点着色器的a_Position变量传输数据时，首先需要向WebGL系统请求该变量的存储地址。
+        const a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+        const a_PointSize = gl.getAttribLocation(gl.program, 'a_PointSize');
+        if (a_Position < 0) {
+            console.log(`Failed to get the storage location of a_Position`);
+            return;
+        }
+        if (a_PointSize < 0) {
+            console.log(`Failed to get the storage location of a_PointSize`);
+            return;
+        }
+        //使用我们获取到的变量存储地址，使用它来向着色器传入值。
+        gl.vertexAttrib3f(a_Position, 0.0 + Math.random(), 0.0 + Math.random(), 0.0 + Math.random());
+        gl.vertexAttrib1f(a_PointSize, Math.random() * 10.0);
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.POINTS, 0, 1);
+    }
+    main();
+    setInterval(function () {
+        main();
+    }, 300);
+</script>

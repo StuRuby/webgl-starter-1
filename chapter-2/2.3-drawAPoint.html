@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>draw a point</title>
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/webgl-debug.js"></script>
+    <script src="../lib/cuon-utils.js"></script>
+</head>
+
+<body>
+    <canvas id="webgl" width="400" height="400">
+        please use the browser supporting 'canvas'
+    </canvas>
+</body>
+
+</html>
+<script>
+    //顶点着色器
+    var VSHADER_SOURCE =
+        'void main(){\n' +
+        ' gl_Position =vec4(0.0,0.0,0.0,1.0); \n ' + //设置坐标
+        ' gl_PointSize = 10.0;\n' + //设置尺寸
+        '}\n';
+    //片元着色器
+    var FSHADER_SOURCE =
+        `
+        void main(){
+            gl_FragColor =vec4(1.0,0.0,0.0,1.0);
+        }
+     `;
+
+    function main() {
+        const canvas = document.getElementById('webgl');
+        const gl = getWebGLContext(canvas);
+        if (!gl) {
+            console.log(`failed to get the rendering context for webgl`);
+            return;
+        }
+        //初始化着色器，成功返回true,失败返回false。
+        if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) {
+            console.log(`failed to initialize shaders.`);
+            return;
+        }
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.POINTS, 0, 1);
+    }
+    main();
+    //绘制过程：
+    //着色器执行，调用并执行内部的main函数，将值(0.0,0.0,0.0,1.0)赋给`gl_Position`.
+    //将值10.0赋给`gl_PointSize`.
+    //一旦顶点着色器执行完毕之后，片元着色器就会开始执行，调用`main()`函数，将颜色值赋给`gl_FragColor`.
+    //最后，一个红色的10个像素大的点就会被绘制在(0.0,0.0,0.0,1.0)处了。
+</script>
