@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>使用矩阵进行三角形旋转</title>
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/webgl-debug.js"></script>
+    <script src="../lib/cuon-utils.js"></script>
+</head>
+
+<body>
+    <canvas id="webgl" width="400" height="400"></canvas>
+</body>
+
+</html>
+<script>
+    const VSHADER_SOURCE =
+        `
+        attribute vec4 a_Position;
+        uniform mat4 u_xformMatrix;
+        void main(){
+            gl_Position =u_xformMatrix*a_Position;
+        }
+    `;
+    const FSHADER_SOURCE =
+        `
+        precision mediump float; //精度限定词
+        uniform vec4 u_FragColor; //uniform 变量
+        void main(){
+            gl_FragColor =u_FragColor;
+        }
+    `;
+
+    const ANGLE = 90.0;
+
+    function main() {
+        const canvas = document.getElementById('webgl');
+        //获取webgl上下文
+        const gl = getWebGLContext(canvas);
+        if (!gl) {
+            console.log('failed to initial webgl');
+            return;
+        }
+        //初始化着色器
+        if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) {
+            console.log('failed to init shaders');
+            return;
+        }
+        //设置顶点位置
+        let n = initVertexBuffers(gl);
+        if (n < 0) {
+            console.log('Failed to set the positions of the vertices');
+            return;
+        }
+        const radian = Math.PI * ANGLE / 180.0;
+        const cosB = Math.cos(radian);
+        const sinB = Math.sin(radian);
+        //webgl中矩阵是列主序的
+        const xformMatrix = new Float32Array([
+            cosB, sinB, 0.0, 0.0, -sinB, cosB, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0,
+        ]);
+        const u_xformMatrix = gl.getUniformLocation(gl.program, 'u_xformMatrix');
+        if (u_xformMatrix < 0) {
+            console.log('Failed to get the storage of uniform');
+            return;
+        }
+        gl.uniformMatrix4fv(u_xformMatrix, false, xformMatrix);
+        //设置背景色
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        //清空canvas
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        //从缓冲区的第一个点开始，使顶点着色器执行三次，这三个点绘制出一个三角形
+        gl.drawArrays(gl.TRIANGLES, 0, n);
+    }
+    //创建顶点缓冲区对象，并将多个顶点的数据保存在缓冲区中，然后将缓冲区传给顶点着色器
+    function initVertexBuffers(gl) {
+        //类型化数组
+        let vertices = new Float32Array([
+            0.0, 0.5, -0.5, -0.5, 0.5, -0.5
+        ]);
+        let n = 3;
+        //创建缓冲区对象
+        let vertexBuffer = gl.createBuffer();
+        if (!vertexBuffer) {
+            console.log('Failed to create the buffer object');
+            return -1;
+        }
+        //将缓冲区对象绑定到目标
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+        //向缓冲区对象写入数据
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+        const a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+        if (a_Position < 0) {
+            console.log('Failed to get the storage location of a_Position')
+        }
+        //将缓冲区对象分配给a_Position变量
+        //将整个缓冲区对象(实际上是缓冲区对象的引用或指针)分配给`attribute`变量
+        gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
+        //连接a_Position变量与分配给它的缓冲区对象
+        //使顶点着色器能够访问缓冲区内的数据
+        gl.enableVertexAttribArray(a_Position);
+        return n;
+    }
+    main();
+</script>
