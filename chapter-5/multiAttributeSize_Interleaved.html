@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>步进和偏移参数</title>
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/webgl-debug.js"></script>
+    <script src="../lib/cuon-utils.js"></script>
+</head>
+
+<body>
+    <canvas id="webgl" width="400" height="400"></canvas>
+</body>
+
+</html>
+<script>
+    const VSHADER_SOURCE = `
+        attribute vec4 a_Position;
+        attribute float a_PointSize;
+        void main(){
+            gl_Position=a_Position;
+            gl_PointSize=a_PointSize;
+        }
+    `;
+    const FSHADER_SOURCE = `
+        void main(){
+            gl_FragColor =vec4(1.0,0.0,0.0,1.0);
+        }
+    `;
+
+    function main() {
+        const canvas = document.getElementById('webgl');
+        const gl = getWebGLContext(canvas);
+        if (!gl) {
+            console.log('Failed to get webgl context');
+            return;
+        }
+        if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) {
+            console.log('Failed to init shaders');
+            return;
+        }
+
+        const n = initVertexBuffers(gl);
+        if (n <= -1) {
+            return;
+        }
+        //指定背景色
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.POINTS, 0, n);
+    }
+
+    //创建顶点缓冲区对象，并将多个顶点的数据保存在缓冲区中，然后将缓冲区传给顶点着色器
+    function initVertexBuffers(gl) {
+        // let vertices = new Float32Array([
+        //     0.0, 0.5, -0.5, -0.5, 0.5, -0.5
+        // ]);
+        // const n = 3;
+        // const sizes = new Float32Array([
+        //     10.0, 20.0, 30.0
+        // ]);
+        let n = 3;
+        let vertexSizes = new Float32Array([
+            0.0, 0.5, 10.0,
+            -0.5, -0.5, 20.0,
+            0.5, -0.5, 30.0
+        ]);
+        //创建缓冲区对象
+        // const vertexBuffer = gl.createBuffer();
+        // const sizeBuffer = gl.createBuffer();
+        const vertexSizesBuffer = gl.createBuffer();
+        if (!vertexSizesBuffer) {
+            console.log('Failed to create the buffer object');
+            return -1;
+        }
+        //绑定缓冲区对象
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexSizesBuffer);
+        //将数据写入缓冲区对象
+        gl.bufferData(gl.ARRAY_BUFFER, vertexSizes, gl.STATIC_DRAW);
+        //表示每个元素所占的字节数
+        const FSIZE = vertexSizes.BYTES_PER_ELEMENT;
+
+        //获取`attribute`   `a_Position`变量
+        const a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+        if (a_Position < 0) {
+            console.log('Failed to get the storage of position');
+            return;
+        }
+        //将缓冲区对象分配给一个`attribute`变量 (gl.vertexAttribPointer())
+        gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, FSIZE * 3, 0);
+        //开启`attribute`变量
+        gl.enableVertexAttribArray(a_Position);
+
+        const a_PointSize = gl.getAttribLocation(gl.program, 'a_PointSize');
+        if (a_PointSize < 0) {
+            console.log('Failed to get the storage of pointSize');
+            return;
+        }
+        gl.vertexAttribPointer(a_PointSize, 1, gl.FLOAT, false, FSIZE * 3, FSIZE * 2);
+        gl.enableVertexAttribArray(a_PointSize);
+        return n;
+    }
+    main();
+</script>

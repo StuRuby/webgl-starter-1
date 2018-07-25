@@ -27,9 +27,12 @@
     const FSHADER_SOURCE =
         `
         precision mediump float; //精度限定词
-        uniform vec4 u_FragColor; //uniform 变量
+        //uniform vec4 u_FragColor; //uniform 变量
+        uniform float u_Width;
+        uniform float u_Height;
         void main(){
-            gl_FragColor =u_FragColor;
+            //gl_FragColor =u_FragColor;
+            gl_FragColor = vec4(gl_FragCoord.x/u_Width,0.0,gl_FragCoord.y/u_Height,1.0);
         }
     `;
 
