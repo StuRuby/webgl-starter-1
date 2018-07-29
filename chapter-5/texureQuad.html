@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>纹理坐标</title>
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/webgl-debug.js"></script>
+    <script src="../lib/cuon-utils.js"></script>
+</head>
+
+<body>
+    <canvas id="webgl" width="400" height="400"></canvas>
+</body>
+
+</html>
+<script>
+    const VSHADER_SOURCE = `
+        attribute vec4 a_Position;
+        attribute vec2 a_TextCoord;
+        varying vec2 v_TextCoord;
+        void main(){
+            gl_Position=a_Position;
+            v_TextCoord=a_TextCoord;
+        }
+    `
+    const FSHADER_SOURCE = `
+        precision mediump float;
+        uniform sampler2D u_Sampler;
+        varying vec2 v_TextCoord;
+        void main(){
+            gl_FragColor=texture2D(u_Sampler,v_TextCoord);
+        } 
+    `;
+
+    function main() {
+        const canvas = document.getElementById('webgl');
+        const gl = getWebGLContext(canvas);
+        if (!gl) {
+            console.log(`webgl初始化失败`);
+            return;
+        }
+        if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) {
+            console.log('shaders初始化失败');
+            return;
+        }
+
+        const n = initVertexBuffers(gl);
+        if (n < 0) {
+            console.log('设置顶点信息失败');
+            return;
+        }
+
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+
+        if (!initTextures(gl, n)) {
+            console.log(`设置texture失败`);
+            return;
+        }
+    }
+
+
+    function initVertexBuffers(gl) {
+        //将纹理坐标传入顶点着色器
+        const verticesTexCoords = new Float32Array([
+            -0.5, 0.5, 0.0, 1.0,
+            -0.5, -0.5, 0.0, 0.0,
+            0.5, 0.5, 1.0, 1.0,
+            0.5, -0.5, 1.0, 0.0
+        ]);
+
+        const n = 4;
+
+        const vertexTexCoordBuffer = gl.createBuffer();
+        if (!vertexTexCoordBuffer) {
+            console.log('创建buffer失败');
+            return;
+        }
+        //将顶点坐标和纹理坐标写入缓冲区对象
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexTexCoordBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, verticesTexCoords, gl.STATIC_DRAW);
+
+        const FSIZE = verticesTexCoords.BYTES_PER_ELEMENT;
+        
+        const a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+        if (a_Position < 0) {
+            console.log('获取a_Position失败');
+            return;
+        }
+
+        gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, FSIZE * 4, 0);
+        gl.enableVertexAttribArray(a_Position);
+
+        //将纹理坐标分配给 a_TextCoord并开启它
+        const a_TextCoord = gl.getAttribLocation(gl.program, 'a_TextCoord');
+        if(a_TextCoord<0){
+            console.log('获取a_TexCoord存储地址失败');
+            return -1;
+        }
+
+        gl.vertexAttribPointer(a_TextCoord, 2, gl.FLOAT, false, FSIZE * 4, FSIZE * 2);
+        gl.enableVertexAttribArray(a_TextCoord);
+
+        return n;
+    }
+
+
+    function initTextures(gl, n) {
+        //创建纹理对象
+        const texture = gl.createTexture();
+        if (!texture) {
+            console.log('创建纹理对象失败');
+            return false;
+        }
+        // 获取u_Sampler的存储位置
+        const u_Sampler = gl.getUniformLocation(gl.program, 'u_Sampler');
+        if (!u_Sampler) {
+            console.log('获取u_Sampler存储位置失败');
+            return false;
+        }
+        const image = new Image();
+
+        image.onload = function () {
+            loadTexture(gl, n, texture, u_Sampler, image);
+        }
+        image.src = '../resources/sky.jpg';
+        return true;
+    }
+
+    function loadTexture(gl,n,texture,u_Sampler,image){
+        //对纹理对象进行y轴反转
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,1);
+        //开启0号纹理单元
+        gl.activeTexture(gl.TEXTURE);
+        //向target绑定纹理对象
+        gl.bindTexture(gl.TEXTURE_2D,texture);
+        //配置纹理参数
+        gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+        //配置纹理图像
+        gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,image);
+        //将0号纹理传递给着色器
+        gl.uniform1i(u_Sampler,0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        //绘制矩形
+        gl.drawArrays(gl.TRIANGLE_STRIP,0,n);
+    }
+
+    main();
+</script>
